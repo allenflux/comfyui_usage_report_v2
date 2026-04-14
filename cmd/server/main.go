@@ -202,6 +202,7 @@ func main() {
 	if timeout <= 0 {
 		timeout = 120 * time.Second
 	}
+
 	b, err := os.ReadFile("./web/index.html")
 	if err != nil {
 		log.Fatal(err)
@@ -211,6 +212,9 @@ func main() {
 		client: &http.Client{Timeout: timeout},
 		tpl:    template.Must(template.New("index").Parse(string(b))),
 	}
+
+	go app.StartGoogleSheetsHourlyJob(context.Background())
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", app.handleIndex)
 	mux.HandleFunc("/api/report", app.handleReport)
