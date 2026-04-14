@@ -12,8 +12,7 @@ RUN go mod download
 COPY . .
 
 # 编译
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /out/comfyui_usage_report .
-
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /out/comfyui_usage_report ./cmd/server
 # 运行镜像
 FROM alpine:3.20
 
