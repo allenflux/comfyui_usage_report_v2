@@ -1,0 +1,95 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ComfyUI GPU Capacity Report</title>
+<style>
+:root{--bg:#f4f7fb;--panel:#fff;--panel2:#fbfdff;--fg:#182230;--muted:#667085;--border:#dbe4f0;--blue:#2563eb;--blue2:#60a5fa;--shadow:0 10px 28px rgba(16,24,40,.06)}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#f7f9fc,#eef3f8);color:var(--fg);font-family:Inter,Arial,sans-serif}.wrap{max-width:1520px;margin:0 auto;padding:24px}.hero,.card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow)}.hero{padding:20px 22px;margin-bottom:16px}.hero-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.hero h1{margin:0 0 8px;font-size:30px}.hero p{margin:0;color:var(--muted);line-height:1.6}.badges{display:flex;gap:8px;flex-wrap:wrap}.badge{padding:7px 10px;border-radius:999px;border:1px solid var(--border);background:#f8fbff;color:#334155;font-size:12px}.lang{display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end}.lang button,.preset{width:auto;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:#fff;color:#334155;cursor:pointer}.lang button.active,.preset.active{background:linear-gradient(135deg,var(--blue2),var(--blue));color:#fff;border-color:#93c5fd}.presets{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.filters{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px}label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}input,button{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--fg)}button.run{background:linear-gradient(135deg,var(--blue),#1d4ed8);color:#fff;font-weight:800;cursor:pointer}.actions{display:flex;gap:10px;margin-top:12px}.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}.kpi,.card{padding:18px}.kpi .name{color:var(--muted);font-size:13px}.kpi .value{font-size:30px;font-weight:800;margin-top:8px}.kpi .sub{margin-top:6px;color:var(--muted);font-size:12px}.split{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.section-title{margin:0 0 12px;font-size:18px}.summary-item{padding:12px 0;border-bottom:1px dashed var(--border);line-height:1.7}.summary-item:last-child{border-bottom:0}.host-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.host-card{border:1px solid var(--border);border-radius:16px;padding:14px;background:#fff}.muted{color:var(--muted)}.bars .row{display:grid;grid-template-columns:280px 1fr 110px;gap:10px;align-items:center;margin:10px 0}.bar-wrap{height:16px;border:1px solid var(--border);background:#eef2f7;border-radius:999px;overflow:hidden}.bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--blue2))}.table-wrap{max-height:760px;overflow:auto}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:12px 10px;border-bottom:1px solid #edf2f7;text-align:left;font-size:13px;vertical-align:top}.table th{position:sticky;top:0;background:#f8fbfc}.pill{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px}.pill.ok{background:#ecfdf3;color:#027a48}.pill.warn{background:#fff7ed;color:#b45309}.pill.hot{background:#fef2f2;color:#b91c1c}.logs-panel{margin-top:16px}.logs-box{max-height:340px;overflow:auto;background:#0f172a;color:#e2e8f0;border-radius:16px;padding:14px;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap}.diag{margin-top:10px;font-size:12px;color:#64748b;padding-top:10px;border-top:1px dashed var(--border)}.pulse{animation:pulse .45s ease}@keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.01);box-shadow:0 0 0 6px rgba(37,99,235,.08)}100%{transform:scale(1)}}@media(max-width:1200px){.filters,.kpis,.host-grid,.split{grid-template-columns:1fr 1fr}.bars .row{grid-template-columns:1fr}.wrap{padding:12px}}@media(max-width:760px){.filters,.kpis,.host-grid,.split{grid-template-columns:1fr}.hero-top{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="lang"><button id="lang-zh" class="active" onclick="setLang('zh')">中文</button><button id="lang-en" onclick="setLang('en')">English</button></div>
+  <div class="hero">
+    <div class="hero-top">
+      <div>
+        <h1 id="title"></h1>
+        <p id="subtitle"></p>
+      </div>
+      <div class="badges"><span class="badge">ComfyUI</span><span class="badge">VictoriaLogs</span><span class="badge">Host Inventory</span><span class="badge">GPU Capacity</span></div>
+    </div>
+    <div class="presets"><button class="preset" onclick="applyPreset('1h',this)">Last 1h</button><button class="preset" onclick="applyPreset('6h',this)">Last 6h</button><button class="preset active" onclick="applyPreset('24h',this)">Last 24h</button><button class="preset" onclick="applyPreset('7d',this)">Last 7d</button></div>
+    <div class="filters">
+      <div><label id="l_from"></label><input id="from" type="datetime-local" value="{{.DefaultFrom}}"></div>
+      <div><label id="l_to"></label><input id="to" type="datetime-local" value="{{.DefaultTo}}"></div>
+      <div><label id="l_step"></label><input id="step" value="{{.DefaultStep}}"></div>
+      <div><label id="l_query"></label><input id="q" value="{{.DefaultQuery}}"></div>
+      <div><label id="l_host"></label><input id="host" placeholder="TW-H200-01"></div>
+    </div>
+    <div class="actions"><button class="run" id="runBtn" onclick="loadReport()"></button><button onclick="downloadCSV()" id="csvBtn"></button></div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="split">
+    <div class="card">
+      <h3 class="section-title" id="hostTitle"></h3>
+      <div id="hostRollup" class="host-grid"></div>
+    </div>
+    <div class="card">
+      <h3 class="section-title" id="summaryTitle"></h3>
+      <div id="execSummary"></div>
+      <div id="diag" class="diag"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3 class="section-title" id="topTitle"></h3>
+    <div id="topBars" class="bars"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3 class="section-title" id="detailTitle"></h3>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th id="thHost"></th><th id="thContainer"></th><th id="thLogs"></th><th id="thHours"></th><th id="thDuty"></th><th id="thSessions"></th><th id="thErr"></th><th id="thWarn"></th><th id="thBusy"></th><th id="thClass"></th><th id="thAnalysis"></th><th id="thAction"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="logs-panel">
+      <h3 class="section-title" id="logsTitle"></h3>
+      <div id="logsMeta" class="muted"></div>
+      <div id="logsBox" class="logs-box"></div>
+    </div>
+  </div>
+</div>
+<script>
+const I18N={zh:{title:'ComfyUI GPU 利用率与容量报告',subtitle:'按固定 Host 清单逐台查询 ComfyUI 日志。有日志视为运行中，无日志视为空闲。用于刻画真实有效 GPU 承载面与容量压力。',from:'开始时间',to:'结束时间',step:'时间桶',query:'基础查询',host:'单 Host 查询',run:'生成报告',csv:'导出 CSV',hosts:'Host 总数',activeHosts:'活跃 Host',containers:'容器总数',activeContainers:'活跃容器',events:'日志总数',avgDuty:'平均占空比',hostTitle:'Host 利用率概览',summaryTitle:'管理摘要',topTitle:'Top 活跃容器',detailTitle:'ComfyUI 容器明细',logsTitle:'容器日志样本',thHost:'Host',thContainer:'Container',thLogs:'日志数',thHours:'活跃小时',thDuty:'占空比',thSessions:'会话数',thErr:'错误',thWarn:'告警',thBusy:'忙碌',thClass:'分类',thAnalysis:'运行分析',thAction:'样本',viewLogs:'查看日志',coverage:'覆盖率',pressure:'压力',expected:'预期',active:'活跃',noLogs:'点击明细中的“查看日志”加载样本。',loading:'加载中...'},en:{title:'ComfyUI GPU Utilization & Capacity Report',subtitle:'Query ComfyUI logs host-by-host from a fixed inventory. Logs mean busy, no logs mean idle. This is designed to describe the effective GPU serving fleet and capacity pressure.',from:'From',to:'To',step:'Bucket',query:'Base Query',host:'Single Host',run:'Generate',csv:'Export CSV',hosts:'Total Hosts',activeHosts:'Active Hosts',containers:'Total Containers',activeContainers:'Active Containers',events:'Total Events',avgDuty:'Avg Duty Cycle',hostTitle:'Host Utilization Overview',summaryTitle:'Executive Summary',topTitle:'Top Active Containers',detailTitle:'ComfyUI Container Details',logsTitle:'Container Log Samples',thHost:'Host',thContainer:'Container',thLogs:'Logs',thHours:'Active Hours',thDuty:'Duty',thSessions:'Sessions',thErr:'Errors',thWarn:'Warnings',thBusy:'Busy',thClass:'Class',thAnalysis:'Analysis',thAction:'Sample',viewLogs:'View Logs',coverage:'Coverage',pressure:'Pressure',expected:'Expected',active:'Active',noLogs:'Click “View Logs” in the table to load samples.',loading:'Loading...'}};
+let currentLang='zh';
+function t(k){return (I18N[currentLang]||I18N.zh)[k]||k}
+function setLang(lang){currentLang=lang;document.getElementById('lang-zh').classList.toggle('active',lang==='zh');document.getElementById('lang-en').classList.toggle('active',lang==='en');applyI18n();if(window.__data)render(window.__data)}
+function applyI18n(){title.textContent=t('title');subtitle.textContent=t('subtitle');l_from.textContent=t('from');l_to.textContent=t('to');l_step.textContent=t('step');l_query.textContent=t('query');l_host.textContent=t('host');runBtn.textContent=t('run');csvBtn.textContent=t('csv');hostTitle.textContent=t('hostTitle');summaryTitle.textContent=t('summaryTitle');topTitle.textContent=t('topTitle');detailTitle.textContent=t('detailTitle');logsTitle.textContent=t('logsTitle');thHost.textContent=t('thHost');thContainer.textContent=t('thContainer');thLogs.textContent=t('thLogs');thHours.textContent=t('thHours');thDuty.textContent=t('thDuty');thSessions.textContent=t('thSessions');thErr.textContent=t('thErr');thWarn.textContent=t('thWarn');thBusy.textContent=t('thBusy');thClass.textContent=t('thClass');thAnalysis.textContent=t('thAnalysis');thAction.textContent=t('thAction');if(!window.__logsLoaded){logsBox.textContent=t('noLogs')}}
+function v(id){return document.getElementById(id).value}
+function toLocalInputValue(d){const pad=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
+function animateInputs(){['from','to'].forEach(id=>{const el=document.getElementById(id);el.classList.remove('pulse');void el.offsetWidth;el.classList.add('pulse');setTimeout(()=>el.classList.remove('pulse'),450)})}
+function applyPreset(label,btn){document.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');const now=new Date();let ms=24*3600*1000;if(label==='1h')ms=3600*1000;else if(label==='6h')ms=6*3600*1000;else if(label==='7d')ms=7*24*3600*1000;document.getElementById('to').value=toLocalInputValue(now);document.getElementById('from').value=toLocalInputValue(new Date(now.getTime()-ms));animateInputs()}
+async function loadReport(){logsBox.textContent=t('loading');logsMeta.textContent='';const p=new URLSearchParams({from:v('from'),to:v('to'),step:v('step'),q:v('q'),host:v('host')});const res=await fetch('/api/report?'+p.toString());if(!res.ok){alert(await res.text());logsBox.textContent=t('noLogs');return}const data=await res.json();window.__data=data;window.__logsLoaded=false;render(data);logsBox.textContent=t('noLogs')}
+function render(data){const rows=data.rows||[];const top=rows.slice(0,20);let mx=1;for(const r of top)mx=Math.max(mx,r.active_hours||0);kpis.innerHTML=`<div class="card kpi"><div class="name">${t('hosts')}</div><div class="value">${num(data.total_hosts)}</div><div class="sub">${t('active')}: ${num(data.active_hosts)} · ${t('expected')}: ${num(data.expected_hosts||0)}</div></div><div class="card kpi"><div class="name">${t('containers')}</div><div class="value">${num(data.total_containers)}</div><div class="sub">${t('active')}: ${num(data.active_containers)}</div></div><div class="card kpi"><div class="name">${t('events')}</div><div class="value">${num(data.total_events)}</div><div class="sub">${t('coverage')}: ${pct(data.host_coverage_ratio||0)}</div></div><div class="card kpi"><div class="name">${t('avgDuty')}</div><div class="value">${pct(data.avg_duty_cycle||0)}</div><div class="sub">${t('pressure')}: ${esc(data.capacity_pressure||'-')}</div></div><div class="card kpi"><div class="name">GPU</div><div class="value">${num(data.expected_gpus||0)}</div><div class="sub">Host map driven</div></div><div class="card kpi"><div class="name">Hot</div><div class="value">${num(data.hot_containers||0)}</div><div class="sub">Logs imply active GPU work</div></div>`;
+hostRollup.innerHTML=(data.host_rollup||[]).slice(0,18).map(h=>`<div class="host-card"><div><strong>${esc(h.host)}</strong></div><div class="muted">${h.containers} ${t('containers')}</div><div class="muted">${t('events')}: ${num(h.total_events)}</div><div class="muted">${t('avgDuty')}: ${pct(h.avg_duty_cycle)}</div><div class="muted">${t('thBusy')}: ${num(h.busy_containers)} · ${t('thErr')}: ${num(h.error_containers)}</div><div class="muted">dominant: <strong>${esc(h.dominant_workload||'-')}</strong></div></div>`).join('');
+execSummary.innerHTML=`<div class="summary-item"><strong>${currentLang==='zh'?'资源结论':'Capacity conclusion'}:</strong> ${esc(currentLang==='zh'?(data.exec_summary_zh||''):(data.exec_summary_en||''))}</div><div class="summary-item">${currentLang==='zh'?'该报告使用固定 Host 清单逐台查询，不依赖单次大查询的截断结果。':'This report queries a fixed host inventory one host at a time, so it is not constrained by a single truncated wildcard query.'}</div><div class="summary-item">${currentLang==='zh'?'这里的 GPU 利用率是日志利用率：有日志即在用，无日志即空闲。更适合说明“有效承载面”和“容量压力”，而不是做精确计费。':'GPU utilization here is log-derived: logs mean busy, no logs mean idle. It is better for describing effective serving coverage and capacity pressure than for precise billing.'}</div>`;
+diag.innerHTML=`host_queries=${num(data.diagnostics.host_queries)} · hosts_with_data=${num(data.diagnostics.hosts_with_data)} · container_queries=${num(data.diagnostics.container_queries)} · limit=${num(data.diagnostics.query_limit)}<br>summary=${num(data.diagnostics.summary_query_seconds)}s · timeline=${num(data.diagnostics.timeline_query_seconds)}s · signal=${num(data.diagnostics.signal_query_seconds)}s<br>${esc(data.diagnostics.note||'')}`;
+topBars.innerHTML=top.map(r=>`<div class="row"><div><strong>${esc(r.host)}</strong><div class="muted">${esc(r.container_name)}</div></div><div class="bar-wrap"><div class="bar" style="width:${((r.active_hours||0)/mx*100).toFixed(1)}%"></div></div><div>${num(r.active_hours)} h · ${pct(r.duty_cycle)}</div></div>`).join('');
+tbody.innerHTML=rows.map(r=>`<tr><td><strong>${esc(r.host)}</strong></td><td>${esc(r.container_name)}</td><td>${num(r.log_events)}</td><td>${num(r.active_hours)}</td><td>${pct(r.duty_cycle)}</td><td>${num(r.sessions)}</td><td>${num(r.errors)}</td><td>${num(r.warnings)}</td><td>${num(r.busy_hints)}</td><td><span class="pill ${r.duty_cycle>=0.6?'hot':(r.duty_cycle>=0.2?'warn':'ok')}">${esc(r.utilization_class)} / ${esc(r.workload_class)}</span></td><td>${esc(currentLang==='zh'?r.analysis_zh:r.analysis_en)}</td><td><button onclick="loadLogs('${encodeURIComponent(r.host)}','${encodeURIComponent(r.container_name)}')">${t('viewLogs')}</button></td></tr>`).join('')}
+async function loadLogs(host,container){logsBox.textContent=t('loading');logsMeta.textContent='';const p=new URLSearchParams({host:decodeURIComponent(host),container:decodeURIComponent(container),from:v('from'),to:v('to')});const res=await fetch('/api/container_logs?'+p.toString());if(!res.ok){logsBox.textContent=await res.text();return}const data=await res.json();window.__logsLoaded=true;logsMeta.textContent=`${data.host} / ${data.container_name}`;logsBox.textContent=(data.lines||[]).join('\n\n')||t('noLogs')}
+function downloadCSV(){const p=new URLSearchParams({from:v('from'),to:v('to'),step:v('step'),q:v('q'),host:v('host')});window.open('/api/report.csv?'+p.toString(),'_blank')}
+function num(v){return Number(v||0).toLocaleString(undefined,{maximumFractionDigits:2})} function pct(v){return (Number(v||0)*100).toFixed(1)+'%'} function esc(s){return String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;')}
+setLang('zh');applyPreset('24h',document.querySelector('.preset.active'));loadReport();
+</script>
+</body>
+</html>

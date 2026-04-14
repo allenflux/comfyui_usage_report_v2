@@ -1,0 +1,74 @@
+
+server:
+  addr: ":8080"
+
+victorialogs:
+  base_url: "https://la-vlinsert.aiaipool.com"
+  query_path: "/select/logsql/query"
+  timeout: "120s"
+  auth:
+    type: ""
+    username: ""
+    password: ""
+    bearer: ""
+  headers:
+
+report:
+  default_start: "-24h"
+  default_end: "now"
+  default_step: "1m"
+  base_query: "*"
+  host_field: "host"
+  container_field: "container_name"
+  host_filter_template: "%s:=%q"
+  concurrency: 10
+  query_limit: 5000
+  sample_log_limit: 80
+  expected_hosts: 160
+  expected_gpus: 160
+  inventory_hosts:
+    - "TW-H200-01"
+    - "TW-H200-02"
+    - "TW-H200-03"
+    - "TW-H200-04"
+    - "TW-H200-05"
+    - "US-H200-01"
+    - "US-H200-02"
+    - "US-H200-03"
+    - "US-H200-04"
+    - "US-H200-05"
+    - "US-H200-06"
+    - "US-H200-07"
+    - "US-H200-08"
+    - "TW-5090-01"
+    - "TW-5090-02"
+    - "TW-5090-03"
+    - "TW-5090-04"
+    - "TW-5090-05"
+    - "TW-5090-06"
+    - "TW-5090-07"
+    - "TW-5090-08"
+    - "TW-5090-09"
+    - "TW-5090-10"
+  error_keywords:
+    - "error"
+    - "exception"
+    - "traceback"
+    - "oom"
+    - "cuda out of memory"
+  warn_keywords:
+    - "warn"
+    - "warning"
+    - "retry"
+    - "slow"
+  startup_keywords:
+    - "starting"
+    - "startup"
+    - "warmup"
+    - "loading model"
+  busy_keywords:
+    - "queue"
+    - "processing"
+    - "executing"
+    - "running prompt"
+    - "busy"
