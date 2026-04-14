@@ -5,7 +5,7 @@ FROM golang:1.24-alpine AS builder
 WORKDIR /src
 
 # 先拷贝依赖文件，利用缓存
-COPY go.mod go.sum ./
+COPY go.mod ./
 RUN go mod download
 
 # 再拷贝项目源码
