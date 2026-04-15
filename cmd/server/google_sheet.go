@@ -24,8 +24,6 @@ const (
 	googleSheetIncludeSummaryFields = true
 )
 
-var googleSheetTimeZone = time.FixedZone("UTC+8", 8*3600)
-
 var googleSheetColumns = []string{
 	"generated_at",
 	"from",
@@ -78,13 +76,12 @@ func googleSheetCredentialsFile() string {
 	return strings.TrimSpace(os.Getenv("GOOGLE_SHEETS_CREDENTIALS_FILE"))
 }
 
-func googleSheetNow() time.Time {
-	return time.Now().In(googleSheetTimeZone)
+func currentGoogleSheetHourlyTick(now time.Time) time.Time {
+	return now.Truncate(time.Hour)
 }
 
 func nextGoogleSheetHourlyTick(now time.Time) time.Time {
-	now = now.In(googleSheetTimeZone)
-	truncated := now.Truncate(time.Hour)
+	truncated := currentGoogleSheetHourlyTick(now)
 	if truncated.Equal(now) {
 		return now
 	}
@@ -97,10 +94,10 @@ func (a *App) StartGoogleSheetsHourlyJob(ctx context.Context) {
 		return
 	}
 
-	log.Printf("[GSHEET] scheduler enabled spreadsheet=%s sheet=%q tz=%s", googleSheetSpreadsheetID, googleSheetName, googleSheetTimeZone.String())
+	log.Printf("[GSHEET] scheduler enabled spreadsheet=%s sheet=%q", googleSheetSpreadsheetID, googleSheetName)
 
 	for {
-		now := googleSheetNow()
+		now := time.Now()
 		nextRunAt := nextGoogleSheetHourlyTick(now)
 		wait := time.Until(nextRunAt)
 		if wait < 0 {
@@ -128,7 +125,7 @@ func (a *App) StartGoogleSheetsHourlyJob(ctx context.Context) {
 }
 
 func (a *App) RunGoogleSheetsJobOnce(ctx context.Context) {
-	startedAt := nextGoogleSheetHourlyTick(googleSheetNow())
+	startedAt := currentGoogleSheetHourlyTick(time.Now())
 
 	googleSheetJobState.Lock()
 	googleSheetJobState.Snapshot.LastRunAt = startedAt.Format(time.RFC3339)
