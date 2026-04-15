@@ -24,6 +24,8 @@ const (
 	googleSheetIncludeSummaryFields = true
 )
 
+var googleSheetTimeZone = time.FixedZone("UTC+8", 8*3600)
+
 var googleSheetColumns = []string{
 	"generated_at",
 	"from",
@@ -76,33 +78,57 @@ func googleSheetCredentialsFile() string {
 	return strings.TrimSpace(os.Getenv("GOOGLE_SHEETS_CREDENTIALS_FILE"))
 }
 
+func googleSheetNow() time.Time {
+	return time.Now().In(googleSheetTimeZone)
+}
+
+func nextGoogleSheetHourlyTick(now time.Time) time.Time {
+	now = now.In(googleSheetTimeZone)
+	truncated := now.Truncate(time.Hour)
+	if truncated.Equal(now) {
+		return now
+	}
+	return truncated.Add(time.Hour)
+}
+
 func (a *App) StartGoogleSheetsHourlyJob(ctx context.Context) {
 	if !googleSheetEnabled {
 		log.Printf("[GSHEET] scheduler disabled")
 		return
 	}
 
-	log.Printf("[GSHEET] scheduler enabled spreadsheet=%s sheet=%q", googleSheetSpreadsheetID, googleSheetName)
-
-	go a.RunGoogleSheetsJobOnce(context.Background())
-
-	ticker := time.NewTicker(time.Hour)
-	//ticker := time.NewTicker(time.Second * 10)
-	defer ticker.Stop()
+	log.Printf("[GSHEET] scheduler enabled spreadsheet=%s sheet=%q tz=%s", googleSheetSpreadsheetID, googleSheetName, googleSheetTimeZone.String())
 
 	for {
+		now := googleSheetNow()
+		nextRunAt := nextGoogleSheetHourlyTick(now)
+		wait := time.Until(nextRunAt)
+		if wait < 0 {
+			wait = 0
+		}
+
+		log.Printf("[GSHEET] next hourly run at %s", nextRunAt.Format("2006-01-02 15:04:05 -0700"))
+
+		timer := time.NewTimer(wait)
 		select {
 		case <-ctx.Done():
+			if !timer.Stop() {
+				select {
+				case <-timer.C:
+				default:
+				}
+			}
 			log.Printf("[GSHEET] scheduler stopped: %v", ctx.Err())
 			return
-		case <-ticker.C:
-			a.RunGoogleSheetsJobOnce(context.Background())
+		case <-timer.C:
 		}
+
+		a.RunGoogleSheetsJobOnce(context.Background())
 	}
 }
 
 func (a *App) RunGoogleSheetsJobOnce(ctx context.Context) {
-	startedAt := time.Now().UTC()
+	startedAt := nextGoogleSheetHourlyTick(googleSheetNow())
 
 	googleSheetJobState.Lock()
 	googleSheetJobState.Snapshot.LastRunAt = startedAt.Format(time.RFC3339)
