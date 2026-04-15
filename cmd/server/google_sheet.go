@@ -95,6 +95,8 @@ func (a *App) StartGoogleSheetsHourlyJob(ctx context.Context) {
 	}
 
 	log.Printf("[GSHEET] scheduler enabled spreadsheet=%s sheet=%q", googleSheetSpreadsheetID, googleSheetName)
+	log.Printf("[GSHEET] run startup backfill once")
+	a.RunGoogleSheetsJobOnce(context.Background())
 
 	for {
 		now := time.Now()
